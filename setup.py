@@ -4,7 +4,7 @@ with open('README.md', 'r') as fh:
     long_description = fh.read()
 setup(
     name='gsheetz',
-    version='0.0.1',
+    version='0.0.3',
     author='A1Liu',
     author_email='albertymliu@gmail.com',
     description='A small package for accessing the google sheets API.',
