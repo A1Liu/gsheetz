@@ -14,17 +14,23 @@ class SheetView:
 		self.localdf = None
 
 	def write(self, *values, **kwargs):
+		"""
+		Writes values to a line of cells that is outside of the
+		localdf range
+		Positional
+		values - arbitrarily long list of parameters
+			The values to write
+		Keyword Only
+		axis - {0,1}, default 0
+			The axis to write along. 0 to write a row,
+			1 to write a column
+		shift - non-negative integer, default 0
+			The number of rows/columns to skip before beginning to write
+		"""
 		axis = kwargs.pop('axis', 0)
 		shift = kwargs.pop('shift',0)
 		if kwargs:
 			raise TypeError(f"write() got an unexpected keyword argument '{kwargs.keys()[0]}'")
-		# Writes values to a line of cells. axis = 0 for writing to a row, axis = 1 for writing to a column
-		# Values is list of values to enter into sheets
-		# shift is amount of cells in line to skip before writing
-		# Shortcut for write_row and write_col
-		# Writes to row/column with the lowest row/col number that is completely empty
-		# i.e. expands the localdf by 1 row or 1 column
-		# Override this function if you'd like to write a convenience function
 		if axis == 0:
 			return self.write_row(self.last_index()+1,values,shift)
 		else:
@@ -101,6 +107,16 @@ class SheetView:
 			c2 = c1
 		return get_range_name(sheetname, r1,c1, r2,c2)
 
+	@classmethod
+	def get_view(cls, token_path, secret_path, scopes, **kwargs):
+		# Creates a viewer
+		token = kwargs.pop('token_path',token_path)
+		secret = kwargs.pop('secret_path',secret_path)
+		scopes_list = kwargs.pop('scopes',scopes)
+		creds = get_credentials(token,secret,scopes_list)
+		sheets = connect_to_api(creds)
+		return cls(sheets,**kwargs)
+
 	def _read_sheet(self,spreadsheetID,sheetname):
 		# Read a sheet from the api
 		sheet_metadata = self.api.get(spreadsheetId=spreadsheetID).execute() # Get sheet
@@ -118,9 +134,3 @@ class SheetView:
 		# Read in the ledger
 		values = result.get('values', [])
 		return pd.DataFrame(values)
-
-def get_view(token_path,secret_path,scopes,view_class = SheetView):
-	# Creates a viewer
-	creds = get_credentials(token_path,secret_path,scopes)
-	sheets = connect_to_api(creds)
-	return view_class(sheets)
